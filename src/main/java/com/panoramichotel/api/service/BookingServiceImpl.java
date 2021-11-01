@@ -1,5 +1,6 @@
 package com.panoramichotel.api.service;
 
+import com.panoramichotel.api.exceptions.NotFoundException;
 import com.panoramichotel.api.model.Booking;
 import com.panoramichotel.api.model.BookingStatus;
 import com.panoramichotel.api.model.GuestInfo;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class BookingServiceImpl implements BookingService {
@@ -54,16 +56,20 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public Boolean cancelBooking(Long id) {
+    public Boolean cancelBooking(Long id) throws NotFoundException {
 
-        Booking booking = bookingRepository.findById(id).get();
+        Optional<Booking> result = bookingRepository.findById(id);
+        if (result.isEmpty()) {
+            throw new NotFoundException(String.format("No Bookings found for given id %d", id));
+        }
+        Booking booking = result.get();
         booking.setBookingStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
         return true;
     }
 
     @Override
-    public Booking checkIfBookingExists(final Date checkInDate, final Date checkOutDate) {
+    public Booking checkIfBookingExists(final Date checkInDate) {
         return bookingRepository.checkIfBookingExists(checkInDate);
     }
 }

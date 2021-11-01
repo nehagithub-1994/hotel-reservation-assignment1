@@ -1,14 +1,17 @@
 package com.panoramichotel.api.controller;
 
+import com.panoramichotel.api.dto.BookingDTO;
 import com.panoramichotel.api.exceptions.InvalidBookingException;
 import com.panoramichotel.api.exceptions.NotFoundException;
 import com.panoramichotel.api.model.Booking;
 import com.panoramichotel.api.service.BookingService;
 import com.panoramichotel.api.util.Util;
+import com.panoramichotel.api.util.ValidationErrorProcessor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -16,7 +19,7 @@ import java.util.Date;
 @Slf4j
 @RestController
 @RequestMapping("/booking")
-public class BookingController {
+public class BookingController implements ValidationErrorProcessor {
 
     private final BookingService bookingService;
 
@@ -25,15 +28,16 @@ public class BookingController {
     }
 
     @PostMapping("/presidential-suite")
-    private ResponseEntity<?> bookHotel(@RequestParam String email, @RequestParam String firstName,
-                                        @RequestParam String lastName, @RequestParam Integer noOfPeople,
-                                        @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") Date checkInDate, @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") Date checkOutDate) {
+    private ResponseEntity<?> bookHotel(@Validated @RequestBody BookingDTO bookingDTO, final BindingResult bindingResult) {
         try {
-            validateBooking(checkInDate, checkOutDate, noOfPeople);
-            final Long bookingId = bookingService.reserve(email, firstName, lastName, noOfPeople, checkInDate, checkOutDate);
+            if (bindingResult.hasErrors()) {
+                return processValidationErrors(bindingResult);
+            }
+            validateBooking(bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate(), bookingDTO.getNoOfPeople());
+            final Long bookingId = bookingService.reserve(bookingDTO.getEmail(), bookingDTO.getFirstName(), bookingDTO.getLastName(), bookingDTO.getNoOfPeople(), bookingDTO.getCheckInDate(), bookingDTO.getCheckOutDate());
             String responseString = "Reservation is successful.Booking Id is " + bookingId + "\n" + "Find your reservation details here: \n" + "localhost:8080/booking/reservation-details/" + bookingId + "\n" + "You can cancel reservation here: " + "localhost:8080/booking/cancel/" + bookingId;
             log.info("Booking Successful");
-            return ResponseEntity.ok(responseString);
+            return new ResponseEntity<>(responseString, HttpStatus.CREATED);
         } catch (InvalidBookingException e) {
             log.error(e.getMessage());
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
@@ -47,7 +51,7 @@ public class BookingController {
         if (noOfPeople > 3 || days > 3) {
             throw new InvalidBookingException(String.format("Booking is allowed upto 3 people for 3 days"));
         }
-        Booking booking = bookingService.checkIfBookingExists(checkInDate, checkOutDate);
+        Booking booking = bookingService.checkIfBookingExists(checkInDate);
 
         if (booking != null) {
             log.error("Booking already exists!");
@@ -67,8 +71,12 @@ public class BookingController {
     }
 
     @PostMapping("/cancel/{reservationId}")
-    private ResponseEntity<Boolean> bookHotel(@PathVariable Long reservationId) {
-        return ResponseEntity.ok(bookingService.cancelBooking(reservationId));
+    private ResponseEntity<?> bookHotel(@PathVariable Long reservationId) {
+        try {
+            return ResponseEntity.ok(bookingService.cancelBooking(reservationId));
+        } catch (NotFoundException e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 
 }

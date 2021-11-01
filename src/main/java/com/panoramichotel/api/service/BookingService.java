@@ -1,5 +1,6 @@
 package com.panoramichotel.api.service;
 
+import com.panoramichotel.api.exceptions.NotFoundException;
 import com.panoramichotel.api.model.Booking;
 
 import java.util.Date;
@@ -11,8 +12,8 @@ public interface BookingService {
 
     Booking findByBookingId(final Long id);
 
-    Boolean cancelBooking(final Long id);
+    Boolean cancelBooking(final Long id) throws NotFoundException;
 
-    Booking checkIfBookingExists(final Date checkInDate, final Date checkOutDate);
+    Booking checkIfBookingExists(final Date checkInDate);
 
 }
