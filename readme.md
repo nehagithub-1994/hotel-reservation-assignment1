@@ -3,7 +3,6 @@
 * Spring Boot
 * In memory H2 database
 * Junit Mockito for testing
-* SQL Server
 
 As per requirement I have provided 3 APIs.
 
