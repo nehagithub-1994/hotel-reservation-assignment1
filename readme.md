@@ -6,7 +6,7 @@
 
 As per requirement I have provided 3 APIs.
 
-1. For booking presidential suite <a name="localhost:8080/booking/presidential-suite"></a> can be used.This API required JSON body to be provided.
+1. For booking presidential suite "localhost:8080/booking/presidential-suite" can be used.This API required JSON body to be provided.
    the sample format can be found at testData.json file inside resources folder in test.
 2. For getting reservation details use the reservation ID provided in booking response as a path variable to:
    localhost:8080/booking/reservation-details/{reservationId}
